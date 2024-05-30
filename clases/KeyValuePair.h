@@ -1,19 +1,20 @@
-template <class key_t, class value_t> class kv_pair {
+template <class key_type, class value_type> 
+class kv_pair {
     private:
-        key_t key;
-        value_t value;
+        key_type key;
+        value_type value;
     public:
-        kv_pair(key_t newkey, value_t newvalue) {
+        kv_pair(key_type newkey, value_type newvalue) {
             this->key = newkey;
             this->value = newvalue;
         }
-        key_t getKey() {
+        key_type get_key() const {
             return this->key;
         }
-        value_t getValue() {
+        value_type get_value() const {
             return this->value;
         }
-        bool isKey(key_t check) {
+        bool is_key(key_type check) const {
             return this->key == check;
         }
 };  
