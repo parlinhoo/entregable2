@@ -8,4 +8,13 @@ struct UserData {
     long long int friendsCount;
     long long int followersCount;
     std::string createdAt;
+
+    UserData() : 
+        university(""), 
+        userID(0),
+        userName(""), 
+        numTweets(0), 
+        friendsCount(0), 
+        followersCount(0),
+        createdAt("") {}
 };

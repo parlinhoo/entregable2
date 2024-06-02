@@ -7,7 +7,7 @@
 #include "clases/HashTableOpen.h"
 #include "clases/UserData.h"
 
-// Función para cargar el archivo CSV y almacenar los datos en la tabla hash
+// Función para cargar el archivo CSV y almacenar los datos en un vector con userdatas
 std::optional<std::vector<UserData>*> loadCSV(const std::string& filecsv) {
     std::ifstream file(filecsv);
     if (!file.is_open()) {
@@ -52,7 +52,14 @@ std::optional<std::vector<UserData>*> loadCSV(const std::string& filecsv) {
         createdAt.erase(createdAt.find_last_not_of(" \t\r\n") + 1);
 
         // Crear un objeto UserData con los datos
-        UserData userData{university, userID, userName, numTweets, friendsCount, followersCount, createdAt};
+        UserData userData;
+        userData.university = university;
+        userData.userID = userID;
+        userData.userName = userName;
+        userData.numTweets = numTweets;
+        userData.friendsCount = friendsCount;
+        userData.followersCount = followersCount;
+        userData.createdAt = createdAt;
 
         // Insertar en la tabla hash abierta
         data_vector_ptr->push_back(userData);
