@@ -1,6 +1,8 @@
 #ifndef USER_DATA
 #define USER_DATA
 
+#include <iostream>
+#include <ostream>
 #include <string>
 
 struct UserData {
@@ -20,6 +22,11 @@ struct UserData {
         friendsCount(0), 
         followersCount(0),
         createdAt("") {}
+
+    friend std::ostream& operator<<(std::ostream &os, const UserData &data) {
+        os << "(Usuario: " << data.userName << ", " << data.userID << ")";
+        return os;
+    }
 };
 
 #endif
