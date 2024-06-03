@@ -1,3 +1,6 @@
+#ifndef HASH_TABLE_OPEN
+#define HASH_TABLE_OPEN
+
 #include <cstddef>
 #include <iostream>
 #include <iterator>
@@ -82,3 +85,5 @@ public:
         }
     }
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef MAP_ADT
+#define MAP_ADT
+
 #include <optional>
 
 template <class key_type, class value_type> class MapADT {
@@ -7,3 +10,5 @@ template <class key_type, class value_type> class MapADT {
     virtual int size() = 0;
     virtual bool is_empty() = 0;
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef USER_DATA
+#define USER_DATA
+
 #include <string>
 
 struct UserData {
@@ -18,3 +21,5 @@ struct UserData {
         followersCount(0),
         createdAt("") {}
 };
+
+#endif

@@ -1,7 +1,8 @@
-#include <cassert>
+#ifndef HASH_TABLE_CLOSED
+#define HASH_TABLE_CLOSED
+
 #include <optional>
 #include <vector>
-#include <list>
 #include <iostream>
 
 #include "KeyValuePair.h"
@@ -14,7 +15,8 @@ class HashTableClosed : public MapADT<key_type, value_type>{
         std::vector<bool> had_value;        
         size_t vector_size;
         size_t non_empty_spaces;
-        // funcion hash que se le da la llave a buscar y los intentos que ha realizado
+        
+        // Funcion hash que se le da la llave a buscar y los intentos que ha realizado antes
         virtual size_t hash(key_type key, int tries) = 0; 
     public:
         HashTableClosed(size_t initial_size) : vector_size(initial_size) {
@@ -28,10 +30,10 @@ class HashTableClosed : public MapADT<key_type, value_type>{
             for (int i = 0; i < this->vector_size; i++) {
                 index = this->hash(key, tries);
                 tries++;
-                if (this->table[index].is_key(key)) return this->table[index].get_value();
-                if (!this->had_value[index]) return std::nullopt;
+                if (this->table[index].is_key(key)) return this->table[index].get_value(); // Buscar si es el valor que buscamos, y si es asi devolverlo
+                if (!this->had_value[index]) return std::nullopt; // Si la casilla no ha tenido nunca un valor, significa que no está el valor en la tabla
             }
-            return std::nullopt;
+            return std::nullopt; // Si ya recorrimos toda la tabla, significa que no está en ella
         }
 
         void put(key_type key, value_type value) override {
@@ -40,10 +42,10 @@ class HashTableClosed : public MapADT<key_type, value_type>{
                 index = this->hash(key, tries);
                 tries++;
                 if (this->table[index].is_null()) {
-                    if (!this->had_value[index]) this->had_value[index] = 1;
+                    if (!this->had_value[index]) this->had_value[index] = 1; // Si esa casilla no ha tenido nunca un valor, la marcamos para que si tenga
                     kv_pair<key_type, value_type> pair(key, value);
-                    this->table[index] = pair;
-                    this->non_empty_spaces++;
+                    this->table[index] = pair; // Creamos un par clave valor nuevo y lo agregamos a la tabla
+                    this->non_empty_spaces++; // Hay un espacio no vacío más
                     return;
                 }
             }
@@ -56,9 +58,9 @@ class HashTableClosed : public MapADT<key_type, value_type>{
                 index = this->hash(key, tries);
                 tries++;
                 if (this->table[index].is_key(key)) {
-                    value_type value = this->table[index].get_value();
-                    this->table[index] = kv_pair<key_type, value_type>();
-                    this->non_empty_spaces--;
+                    value_type value = this->table[index].get_value(); // Obtener valor
+                    this->table[index] = kv_pair<key_type, value_type>(); // Agregar un par clave valor default a la tabla
+                    this->non_empty_spaces--; // Hay un espacio no vacío menos 
                     return value;
                 }
                 if (!this->had_value[index]) return std::nullopt;
@@ -82,3 +84,5 @@ class HashTableClosed : public MapADT<key_type, value_type>{
             }
         }
 };
+
+#endif

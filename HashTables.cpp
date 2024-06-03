@@ -6,6 +6,7 @@
 #include <chrono> // Para medir tiempo de busqueda 
 #include <thread> // Agregar esta línea
 
+#include "clases/DoubleClosedHashTable.h"
 #include "clases/HashTableOpen.h"
 #include "clases/UserData.h"
 
@@ -69,6 +70,7 @@ std::optional<std::vector<UserData>*> loadCSV(const std::string& filecsv) {
     return data_vector_ptr;
 }
 
+
 class OpenHashTableByID : public HashTableOpen<unsigned long long int, UserData> {
 private:
     size_t hash(unsigned long long int userId) {
@@ -90,6 +92,19 @@ private:
     }   
 public:
     OpenHashTableByName(size_t table_size) : HashTableOpen<std::string, UserData>(table_size) {}
+};
+
+class DoubleClosedHashTableId : public DoubleClosedHashTable<unsigned long long int, UserData> {
+    private:
+        size_t first_hash(unsigned long long key) override {
+            return key % this->vector_size;     
+        }
+
+        size_t second_hash(unsigned long long key) override {
+            return 7 - (key % 7); 
+        }
+    public:
+        DoubleClosedHashTableId(size_t initial_size) : DoubleClosedHashTable<unsigned long long, UserData>(initial_size) {}
 };
 
 int main() {

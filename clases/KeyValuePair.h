@@ -1,3 +1,6 @@
+#ifndef KV_PAIR
+#define KV_PAIR
+
 template <class key_type, class value_type> 
 class kv_pair {
     private:
@@ -26,3 +29,5 @@ class kv_pair {
             return this->key == nullkey;
         }
 };  
+
+#endif
