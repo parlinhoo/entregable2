@@ -1,5 +1,5 @@
-#ifndef USER_DATA
-#define USER_DATA
+#ifndef USERDATA_H
+#define USERDATA_H
 
 #include <iostream>
 #include <ostream>

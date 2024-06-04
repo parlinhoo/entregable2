@@ -1,5 +1,5 @@
-#ifndef HASH_TABLE_CLOSED
-#define HASH_TABLE_CLOSED
+#ifndef HASHTABLECLOSED_H
+#define HASHTABLECLOSED_H
 
 #include <optional>
 #include <vector>

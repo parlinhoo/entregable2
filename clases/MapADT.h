@@ -1,5 +1,5 @@
-#ifndef MAP_ADT
-#define MAP_ADT
+#ifndef MAPADT_H
+#define MAPADT_H
 
 #include <optional>
 

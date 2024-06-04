@@ -1,5 +1,5 @@
-#ifndef KV_PAIR
-#define KV_PAIR
+#ifndef KEYVALUEPAIR_H
+#define KEYVALUEPAIR_H
 
 template <class key_type, class value_type> 
 class kv_pair {

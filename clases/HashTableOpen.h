@@ -1,5 +1,5 @@
-#ifndef HASH_TABLE_OPEN
-#define HASH_TABLE_OPEN
+#ifndef HASHTABLEOPEN_H
+#define HASHTABLEOPEN_H
 
 #include <cstddef>
 #include <iostream>
