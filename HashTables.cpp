@@ -1,4 +1,5 @@
 #include <array>
+#include <climits>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -6,6 +7,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <chrono> 
@@ -200,6 +202,86 @@ double realizarBusquedas(HashTable& table, const std::vector<Key>& searchKeys, i
     }
     return static_cast<double>(total_duration.count()); 
 }
+template<class key, class value>
+double realizarBusquedaSTL(std::unordered_map<key, value>& table, const std::vector<key>& searchKeys, int numSearches) {
+    std::chrono::nanoseconds total_duration(0);
+    for (int i = 0; i < numSearches; ++i) {
+        if (i >= searchKeys.size()) {
+            std::cerr << "Error: no hay suficientes claves de busqueda." << std::endl;
+            return -1.0;
+        }
+        auto start_time = std::chrono::steady_clock::now();
+        auto search_result = table.find(searchKeys[i]);
+        auto end_time = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+        total_duration += duration; 
+    }
+    return static_cast<double>(total_duration.count()); 
+}
+template <class hashmap>
+std::vector<double>* time_inserts_id(hashmap& map, std::vector<UserData>& vector) {
+    std::chrono::nanoseconds total_duration(0);
+    std::vector<double>* time_vector = new std::vector<double>();
+    for (int i = 0; i < vector.size(); i++) {
+        auto start = std::chrono::steady_clock::now();
+        map.put(vector[i].userID, vector[i]);
+        auto end = std::chrono::steady_clock::now();
+        total_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        if ((i+1) == 1000 || (i+1) % 5000 == 0) {
+            time_vector->push_back((double) total_duration.count());
+        }
+    }
+    return time_vector;
+}
+
+template <class hashmap>
+std::vector<double>* time_inserts_name(hashmap& map, std::vector<UserData>& vector) {
+    std::chrono::nanoseconds total_duration(0);
+    std::vector<double>* time_vector = new std::vector<double>();
+    for (int i = 0; i < vector.size(); i++) {
+        auto start = std::chrono::steady_clock::now();
+        map.put(vector[i].userName, vector[i]);
+        auto end = std::chrono::steady_clock::now();
+        total_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        if ((i+1) == 1000 || (i+1) % 5000 == 0) {
+            time_vector->push_back((double) total_duration.count());
+        }
+    }
+    return time_vector;
+}
+
+template <class key>
+std::vector<double>* time_stl_inserts_id(std::unordered_map<key, UserData>& map, std::vector<UserData>& vector) {
+    std::chrono::nanoseconds total_duration(0);
+    std::vector<double>* time_vector = new std::vector<double>();
+    for (int i = 0; i < vector.size(); i++) {
+        auto start = std::chrono::steady_clock::now();
+        map.insert({vector[i].userID, vector[i]});
+        auto end = std::chrono::steady_clock::now();
+        total_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        if ((i+1) == 1000 || (i+1) % 5000 == 0) {
+            time_vector->push_back((double) total_duration.count());
+        }
+    }
+    return time_vector;
+}
+
+template <class key>
+std::vector<double>* time_stl_inserts_name(std::unordered_map<key, UserData>& map, std::vector<UserData>& vector) {
+    std::chrono::nanoseconds total_duration(0);
+    std::vector<double>* time_vector = new std::vector<double>();
+    for (int i = 0; i < vector.size(); i++) {
+        auto start = std::chrono::steady_clock::now();
+        map.insert({vector[i].userName, vector[i]});
+        auto end = std::chrono::steady_clock::now();
+        total_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        if ((i+1) == 1000 || (i+1) % 5000 == 0) {
+            time_vector->push_back((double) total_duration.count());
+        }
+    }
+    return time_vector;
+}
+
 
 int main() {
     // Crear tablas hash
@@ -211,83 +293,196 @@ int main() {
     QuadraticHashName quadHashName(42139);
     DoubleClosedHashTableId doubleClosedHashTableId(42139); 
     DoubleClosedHashTableName doubleClosedHashTableName(42139);
+    std::unordered_map<unsigned long long int, UserData> stlId;
+    std::unordered_map<std::string, UserData> stlName;
 
     // Cargar el CSV
     std::string filecsv = "universities_followers.csv";
     auto load_result = loadCSV(filecsv);
     if (!load_result.has_value()) return 1;
     std::vector<UserData> data_vector = *load_result.value();
+    
+    std::ofstream outputfileinserts;
+    outputfileinserts.open("inserts.csv");
 
-    for (const UserData& user : data_vector) {
-        hashTableID.put(user.userID, user);
-        hashTableName.put(user.userName, user);
-        linearHashID.put(user.userID, user);
-        linearHashName.put(user.userName, user);
-        quadHashID.put(user.userID, user);
-        quadHashName.put(user.userName, user);
-        doubleClosedHashTableId.put(user.userID, user);
-        doubleClosedHashTableName.put(user.userName, user);
-    }
+    const std::string title_inserts = "estructura;dataset;tiempo1000;tiempo5000;tiempo10000;tiempo15000;tiempo20000\n";
+    const std::string format_inserts = "%s;%s;%.4lf;%.4lf;%.4lf;%.4lf;%.4lf\n";
 
-    // Definir claves para busqueda
+    outputfileinserts << title_inserts;
+
+    std::vector<double>* times_buffer;
+    char buffer[100];
+ 
+    times_buffer = time_inserts_id<OpenHashTableByID>(hashTableID, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "open", "id", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_name<OpenHashTableByName>(hashTableName, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "open", "name", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_id<LinearHashID>(linearHashID, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_linear", "id", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_name<LinearHashName>(linearHashName, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_linear", "name", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_id<QuadraticHashID>(quadHashID, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_quadratic", "id", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_name<QuadraticHashName>(quadHashName, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_quadratic", "name", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_id<DoubleClosedHashTableId>(doubleClosedHashTableId, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_double", "id", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_inserts_name<DoubleClosedHashTableName>(doubleClosedHashTableName, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "closed_double", "name", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_stl_inserts_id(stlId, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "stl_unordered_map", "id", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
+    times_buffer = time_stl_inserts_name(stlName, data_vector);
+    sprintf(buffer, format_inserts.c_str(), "stl_unordered_map", "name", (*times_buffer)[0], (*times_buffer)[1], (*times_buffer)[2], (*times_buffer)[3], (*times_buffer)[4]);
+    outputfileinserts << buffer;
+    delete times_buffer;
+
 
     // Se definen arreglos de 
     const int numSearches = 2000; 
     const int n_experimentos = 20;
+    
+    auto num_vector = *get_random_array(numSearches*n_experimentos, 0, 21069);
 
-    auto num_vector = *get_random_array(numSearches, 0, 21069);
+    std::vector<std::vector<unsigned long long int>> searchIDs;
+    std::vector<std::vector<std::string>> searchNames;
 
-    std::vector<unsigned long long int> searchIDs;
-    std::vector<std::string> searchNames;
+    std::ifstream random_str;
+    random_str.open("randomstrings.txt");
+    
+    std::vector<std::vector<std::string>> random_strings;
+    std::vector<std::vector<unsigned long long int>> random_ids;
 
-    for (int i = 0; i < numSearches; i++) {
-        UserData data = data_vector[num_vector[i]];
-        searchIDs.push_back(data.userID);
-        searchNames.push_back(data.userName);
+    searchIDs.resize(n_experimentos);
+    searchNames.resize(n_experimentos);
+    random_strings.resize(n_experimentos);
+    random_ids.resize(n_experimentos);
+
+    for (int i = 0; i < n_experimentos; i++) {
+        for (int j = 0; j < numSearches; j++) {
+            UserData data = data_vector[num_vector[i*numSearches + j]];
+            searchIDs[i].push_back(data.userID);
+            searchNames[i].push_back(data.userName);
+            random_str.getline(buffer, 100);
+            random_strings[i].push_back(std::string(buffer));
+            random_ids[i].push_back(rand() + 1);
+        }
     }
-
+    
     std::ofstream outputfile;
     outputfile.open("resultados.csv");
+
+    std::ofstream inexistent;
+    inexistent.open("resultados_inexistentes.csv");
 
     const std::string title = "estructura;dataset;n_experimento;n_consultas;tiempo_ejecucion\n";
     const std::string format = "%s;%s;%i;%i;%.4lf\n";
 
     outputfile << title;
 
-    char buffer[100];
+    for (int i = 0; i < n_experimentos; i++) {
+        auto promIDOpen = realizarBusquedas(hashTableID, searchIDs[i], numSearches);
+        auto promNameOpen = realizarBusquedas(hashTableName, searchNames[i], numSearches);
+        sprintf(buffer, format.c_str(), "open", "id", i+1, numSearches, promIDOpen);
+        outputfile << buffer;
+        sprintf(buffer, format.c_str(), "open", "name", i+1, numSearches, promNameOpen);
+        outputfile << buffer;
 
-    for (int i = 1; i <= n_experimentos; i++) {
-        auto promIDOpen = realizarBusquedas(hashTableID, searchIDs, numSearches);
-        auto promNameOpen = realizarBusquedas(hashTableName, searchNames, numSearches);
-        sprintf(buffer, format.c_str(), "open", "id", i, numSearches, promIDOpen);
-        outputfile << buffer;
-        sprintf(buffer, format.c_str(), "open", "name", i, numSearches, promNameOpen);
-        outputfile << buffer;
+        auto totalInexIDOpen = realizarBusquedas(hashTableID, random_ids[i], numSearches);
+        auto totalInexNameOpen = realizarBusquedas(hashTableName, random_strings[i], numSearches);
+        sprintf(buffer, format.c_str(), "open", "id", i+1, numSearches, totalInexIDOpen);
+        inexistent << buffer;
+        sprintf(buffer, format.c_str(), "open", "name", i+1, numSearches, totalInexNameOpen);
+        inexistent << buffer;
     }
-    for (int i = 1; i <= n_experimentos; i++) {
-        auto promIDLinear = realizarBusquedas(linearHashID, searchIDs, numSearches);
-        auto promNameLinear = realizarBusquedas(linearHashName, searchNames, numSearches);
-        sprintf(buffer, format.c_str(), "closed_linear", "id", i, numSearches, promIDLinear);
+    for (int i = 0; i < n_experimentos; i++) {
+        auto promIDLinear = realizarBusquedas(linearHashID, searchIDs[i], numSearches);
+        auto promNameLinear = realizarBusquedas(linearHashName, searchNames[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_linear", "id", i+1, numSearches, promIDLinear);
         outputfile << buffer;
-        sprintf(buffer, format.c_str(), "closed_linear", "name", i, numSearches, promNameLinear);
+        sprintf(buffer, format.c_str(), "closed_linear", "name", i+1, numSearches, promNameLinear);
         outputfile << buffer;
+
+        auto totalInexIDLinear = realizarBusquedas(linearHashID, random_ids[i], numSearches);
+        auto totalInexNameLinear = realizarBusquedas(linearHashName, random_strings[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_linear", "id", i+1, numSearches, totalInexIDLinear);
+        inexistent << buffer;
+        sprintf(buffer, format.c_str(), "closed_linear", "name", i+1, numSearches, totalInexNameLinear);
+        inexistent << buffer;
     }
-    for (int i = 1; i <= n_experimentos; i++) {
-        auto promIDQuadratic = realizarBusquedas(quadHashID, searchIDs, numSearches);
-        auto promNameQuadratic = realizarBusquedas(quadHashName, searchNames, numSearches);
-        sprintf(buffer, format.c_str(), "closed_quadratic", "id", i, numSearches, promIDQuadratic);
+    for (int i = 0; i < n_experimentos; i++) {
+        auto promIDQuadratic = realizarBusquedas(quadHashID, searchIDs[i], numSearches);
+        auto promNameQuadratic = realizarBusquedas(quadHashName, searchNames[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_quadratic", "id", i+1, numSearches, promIDQuadratic);
         outputfile << buffer;
-        sprintf(buffer, format.c_str(), "closed_quadratic", "name", i, numSearches, promNameQuadratic);
+        sprintf(buffer, format.c_str(), "closed_quadratic", "name", i+1, numSearches, promNameQuadratic);
         outputfile << buffer;
+
+        auto totalInexIDQuad = realizarBusquedas(quadHashID, random_ids[i], numSearches);
+        auto totalInexNameQuad = realizarBusquedas(quadHashName, random_strings[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_quadratic", "id", i+1, numSearches, totalInexIDQuad);
+        inexistent << buffer;
+        sprintf(buffer, format.c_str(), "closed_quadratic", "name", i+1, numSearches, totalInexNameQuad);
+        inexistent << buffer;
     }
-    for (int i = 1; i <= n_experimentos; i++) {
-        auto promIDDouble = realizarBusquedas(doubleClosedHashTableId, searchIDs, numSearches);
-        auto promNameDouble = realizarBusquedas(doubleClosedHashTableName, searchNames, numSearches);
-        sprintf(buffer, format.c_str(), "closed_double", "id", i, numSearches, promIDDouble);
+    for (int i = 0; i < n_experimentos; i++) {
+        auto promIDDouble = realizarBusquedas(doubleClosedHashTableId, searchIDs[i], numSearches);
+        auto promNameDouble = realizarBusquedas(doubleClosedHashTableName, searchNames[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_double", "id", i+1, numSearches, promIDDouble);
         outputfile << buffer;
-        sprintf(buffer, format.c_str(), "closed_double", "name", i, numSearches, promNameDouble);
+        sprintf(buffer, format.c_str(), "closed_double", "name", i+1, numSearches, promNameDouble);
         outputfile << buffer;
+
+        auto totalInexIDDouble = realizarBusquedas(doubleClosedHashTableId, random_ids[i], numSearches);
+        auto totalInexNameDouble = realizarBusquedas(doubleClosedHashTableName, random_strings[i], numSearches);
+        sprintf(buffer, format.c_str(), "closed_double", "id", i+1, numSearches, totalInexIDDouble);
+        inexistent << buffer;
+        sprintf(buffer, format.c_str(), "closed_double", "name", i+1, numSearches, totalInexNameDouble);
+        inexistent << buffer;
     }
+    for (int i = 0; i < n_experimentos; i++) {
+        auto promIDSTL = realizarBusquedaSTL<unsigned long long int, UserData>(stlId, searchIDs[i], numSearches);
+        auto promNameSTL = realizarBusquedaSTL<std::string, UserData>(stlName, searchNames[i], numSearches);
+        sprintf(buffer, format.c_str(), "stl_unordered_map", "id", i+1, numSearches, promIDSTL);
+        outputfile << buffer;
+        sprintf(buffer, format.c_str(), "stl_unordered_map", "name", i+1, numSearches, promNameSTL);
+        outputfile << buffer;
+
+        auto totalInexIDSTL = realizarBusquedaSTL<unsigned long long int, UserData>(stlId, random_ids[i], numSearches);
+        auto totalInexNameSTL = realizarBusquedaSTL<std::string, UserData>(stlName, random_strings[i], numSearches);
+        sprintf(buffer, format.c_str(), "stl_unordered_map", "id", i+1, numSearches, totalInexIDSTL);
+        inexistent << buffer;
+        sprintf(buffer, format.c_str(), "stl_unordered_map", "name", i+1, numSearches, totalInexNameSTL);
+        inexistent << buffer;
+    }
+
+
 
     // Liberar memoria del vector
     delete load_result.value();
